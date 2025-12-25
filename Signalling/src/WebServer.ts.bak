@@ -39,9 +39,6 @@ export interface IWebServerConfig {
 
     // If true, connections to http will be redirected to https.
     https_redirect?: boolean;
-
-    // Optional Content-Security-Policy header value to apply.
-    csp?: string;
 }
 
 /**
@@ -112,13 +109,6 @@ export class WebServer {
                     next();
                 });
             }
-        }
-
-        if (config.csp) {
-            app.use((_req: any, res: any, next: any) => {
-                res.setHeader('Content-Security-Policy', config.csp as string);
-                next();
-            });
         }
 
         app.use(express.static(config.root));

@@ -171,33 +171,6 @@ program
         'After arguments are parsed the config.json is saved with whatever arguments were specified at launch.',
         config_file.save || false
     )
-    .option(
-        '--exit_on_zero_players',
-        'Exit when the last player disconnects.',
-        config_file.exit_on_zero_players ?? true
-    )
-    .option(
-        '--afk_seconds <seconds>',
-        'AFK timeout in seconds for the frontend. 0 disables AFK.',
-        config_file.afk_seconds ?? 0
-    )
-    .option(
-        '--no_players_timeout <seconds>',
-        'Exit if no players connect within this many seconds. 0 = disabled.',
-        config_file.no_players_timeout ?? 60
-    )
-    .option(
-        '--stats_log_path <path>',
-        'Path to stats log file. Empty disables stats logging.',
-        config_file.stats_log_path || 'pixelStreamingStats.log'
-    )
-    .option(
-        '--csp <value>',
-        'Override Content-Security-Policy header.',
-        config_file.csp ??
-            "default-src *; frame-src 'self' https://lbdp.lubansoft.com; media-src 'self' https://lbdp.lubansoft.com; frame-ancestors 'self' * https://lbdp.lubansoft.com; style-src 'self' 'unsafe-inline' *; connect-src *; script-src 'self' 'unsafe-inline' 'unsafe-eval' *"
-    )
-    .option('--font_root <path>', 'Optional path for /font static route.', config_file.font_root || '')
     .helpOption('-h, --help', 'Display this help text.')
     .allowUnknownOption() // ignore unknown options which will allow versions to be swapped out into existing scripts with maybe older/newer options
     .parse();
@@ -241,27 +214,19 @@ if (options.reverse_proxy) {
     app.set('trust proxy', options.reverse_proxy_num_proxies);
 }
 
-app.get('/runtime-config.json', (_req, res) => {
-    res.status(200).json({
-        afkSeconds: Number(options.afk_seconds) || 0
-    });
-});
-
 const serverOpts: IServerConfig = {
     streamerPort: options.streamer_port,
     playerPort: options.player_port,
     sfuPort: options.sfu_port,
     peerOptions: options.peer_options,
-    maxSubscribers: options.max_players,
-    statsLogPath: options.stats_log_path ? path.resolve(options.stats_log_path) : undefined
+    maxSubscribers: options.max_players
 };
 
 if (options.serve) {
     const webserverOptions: IWebServerConfig = {
         httpPort: options.player_port,
         root: options.http_root,
-        homepageFile: options.homepage,
-        csp: options.csp
+        homepageFile: options.homepage
     };
     if (options.https) {
         webserverOptions.httpsPort = options.https_port;
@@ -283,47 +248,7 @@ if (options.serve) {
     serverOpts.httpsServer = webServer.httpsServer;
 }
 
-const resolvedFontRoot = options.font_root
-    ? path.resolve(options.font_root)
-    : path.resolve(options.http_root, 'font');
-if (fs.existsSync(resolvedFontRoot)) {
-    app.use('/font', express.static(resolvedFontRoot));
-}
-
 const signallingServer = new SignallingServer(serverOpts);
-
-const getActivePlayerCount = () =>
-    signallingServer.playerRegistry.listPlayers().filter((player) => player.getPlayerInfo().type !== 'SFU')
-        .length;
-
-const noPlayersTimeoutSeconds = Number(options.no_players_timeout) || 0;
-let hasSeenPlayer = false;
-let noPlayersTimer: ReturnType<typeof setTimeout> | undefined;
-if (noPlayersTimeoutSeconds > 0) {
-    noPlayersTimer = setTimeout(() => {
-        if (getActivePlayerCount() === 0) {
-            Logger.warn(
-                `No players connected in ${noPlayersTimeoutSeconds} seconds, exiting signalling server.`
-            );
-            process.exit(0);
-        }
-    }, noPlayersTimeoutSeconds * 1000);
-}
-signallingServer.playerRegistry.on('added', () => {
-    if (getActivePlayerCount() > 0) {
-        hasSeenPlayer = true;
-    }
-    if (noPlayersTimer) {
-        clearTimeout(noPlayersTimer);
-        noPlayersTimer = undefined;
-    }
-});
-signallingServer.playerRegistry.on('removed', () => {
-    if (options.exit_on_zero_players && hasSeenPlayer && getActivePlayerCount() === 0) {
-        Logger.warn('All players disconnected, exiting signalling server.');
-        process.exit(0);
-    }
-});
 
 if (options.stdin) {
     initInputHandler(options, signallingServer);

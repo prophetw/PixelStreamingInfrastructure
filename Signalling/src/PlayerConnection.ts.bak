@@ -1,6 +1,5 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 import WebSocket from 'ws';
-import fs from 'fs';
 import {
     ITransport,
     WebSocketTransportNJS,
@@ -111,7 +110,6 @@ export class PlayerConnection implements IPlayer, LogUtils.IMessageLogger {
             LogUtils.createHandlerListener(this, this.onListStreamers)
         );
         this.protocol.on(Messages.ping.typeName, LogUtils.createHandlerListener(this, this.onPingMessage));
-        this.protocol.on(Messages.stats.typeName, LogUtils.createHandlerListener(this, this.onStatsMessage));
         /* eslint-enable @typescript-eslint/unbound-method */
 
         this.protocol.on(Messages.offer.typeName, this.sendToStreamer.bind(this));
@@ -241,19 +239,6 @@ export class PlayerConnection implements IPlayer, LogUtils.IMessageLogger {
                 .map((streamer) => streamer.streamerId)
         });
         this.sendMessage(listMessage);
-    }
-
-    private onStatsMessage(message: Messages.stats): void {
-        const statsPayload = `player ${this.playerId}: stats\n${JSON.stringify(message.data, null, 2)}\n`;
-        if (this.server.config.statsLogPath) {
-            try {
-                fs.appendFileSync(this.server.config.statsLogPath, statsPayload);
-            } catch (error) {
-                Logger.warn(`Failed to write stats log: ${(error as Error).message}`);
-            }
-        } else {
-            Logger.info(statsPayload.trim());
-        }
     }
 
     private onStreamerIdChanged(newId: string) {

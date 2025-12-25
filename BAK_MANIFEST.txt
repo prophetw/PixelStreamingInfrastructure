@@ -1,0 +1,13 @@
+Backup manifest for modified upstream source files.
+
+Source of .bak files: /home/dev/code/pixelUpgrade/pixel55 (UE5.5 baseline snapshot)
+Created: $(date)
+
+Files:
+- Signalling/src/PlayerRegistry.ts.bak -> Signalling/src/PlayerRegistry.ts
+- Signalling/src/SignallingServer.ts.bak -> Signalling/src/SignallingServer.ts
+- Signalling/src/PlayerConnection.ts.bak -> Signalling/src/PlayerConnection.ts
+- Signalling/src/WebServer.ts.bak -> Signalling/src/WebServer.ts
+- SignallingWebServer/src/index.ts.bak -> SignallingWebServer/src/index.ts
+- Frontend/implementations/typescript/src/player.ts.bak -> Frontend/implementations/typescript/src/player.ts
+- Frontend/implementations/typescript/src/player.html.bak -> Frontend/implementations/typescript/src/player.html

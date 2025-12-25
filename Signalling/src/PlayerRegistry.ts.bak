@@ -44,7 +44,7 @@ export class PlayerRegistry extends EventEmitter {
         super();
         this.players = new Map();
         this.playerCount = 0;
-        this.nextPlayerId = 100;
+        this.nextPlayerId = 0;
     }
 
     /**

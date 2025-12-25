@@ -45,9 +45,6 @@ export interface IServerConfig {
 
     // Max number of players per streamer.
     maxSubscribers?: number;
-
-    // Optional path to log player stats messages.
-    statsLogPath?: string;
 }
 
 export type ProtocolConfig = {
